@@ -1,13 +1,5 @@
 ## [Improving 2D Feature Representations by 3D-Aware Fine-Tuning](https://arxiv.org/abs/2407.20229) 发表时间: 2024-07-29
 
-![Key Image](images/2407.20229_page_5_img_7.png)
-
-![Key Image](images/2407.20229_page_5_img_11.png)
-
-![Key Image](images/2407.20229_page_5_img_12.png)
-
-![Key Image](images/2407.20229_page_5_img_17.png)
-
 目前的视觉基础模型仅仅在非结构化的二维数据上进行训练，这限制了它们对物体和场景三维结构的理解。在这项工作中，我们证明了在具有三维感知能力的数据上进行微调可以提高新兴语义特征的质量。我们设计了一种将二维语义特征提升为高效三维高斯表示的方法，该方法允许我们针对任意视角重新渲染这些特征。利用渲染后的具有三维感知能力的特征，我们设计了一种微调策略，将这种三维感知能力迁移到二维基础模型中。我们证明了以这种方式微调的模型所产生的特征可以通过简单的线性探测 readily 提高语义分割和深度估计等下游任务的性能。值得注意的是，尽管只在一个室内数据集上进行了微调，但这种改进可以迁移到各种室内数据集和域外数据集。我们希望我们的研究能够鼓励社区在训练二维基础模型时考虑注入三维感知能力。项目页面：https://ywyue.github.io/FiT3D. 
 
 
@@ -22,14 +14,6 @@
 
 ---
 
-## [GS-Net: Generalizable Plug-and-Play 3D Gaussian Splatting Module](https://arxiv.org/abs/2409.11307) 发表时间: 2024-09-17
-
-![Key Image](images/2409.11307_page_3_img_1.png)
-
-三维高斯 splatting (3DGS) 结合了基于图元的表示和体积渲染技术的优势，实现了实时、高质量的渲染。然而，3DGS 模型通常过度拟合单场景训练，并且对高斯椭球的初始化非常敏感，这些椭球是从运动恢复结构 (SfM) 点云中启发式地导出的，这限制了泛化性和实用性。为了解决这些限制，我们提出了 GS-Net，这是一个可泛化的即插即用 3DGS 模块，可以从稀疏的 SfM 点云中 densify 高斯椭球，增强几何结构表示。据我们所知，GS-Net 是第一个具有跨场景泛化能力的即插即用 3DGS 模块。此外，我们还介绍了 CARLA-NVS 数据集，该数据集包含额外的相机视点，可以全面评估重建和渲染质量。大量实验表明，将 GS-Net 应用于 3DGS 可以使传统视点的 PSNR 提高 2.08 dB，新视点的 PSNR 提高 1.86 dB，证实了该方法的有效性和鲁棒性。 
-
-
----
 
 ## [Playground v3: Improving Text-to-Image Alignment with Deep-Fusion Large Language Models](https://arxiv.org/abs/2409.10695) 发表时间: 2024-09-16
 
