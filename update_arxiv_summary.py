@@ -235,7 +235,7 @@ def get_category_insert_position(content, category):
 
 # 提取现有类别下的最大编号
 def get_last_index_for_category(content, category):
-    pattern = re.compile(rf"### {re.escape(category)}\n\n(?:#### (\d+))")
+    pattern = re.compile(rf"#### (\d+).+\[{category}\]", re.IGNORECASE)
     matches = pattern.findall(content)
     if matches:
         return int(matches[-1])  # 返回该类别的最大编号
@@ -255,23 +255,28 @@ def category_exists_in_toc(content, category):
     return bool(toc_pattern.search(content))
 
 
+# 更新目录
+def update_toc(content, category):
+    if not category_exists_in_toc(content, category):
+        toc_end_pos = content.find("\n\n", content.find("## 目录"))
+        toc_entry = f"- [{category}](#{category.lower()})\n"
+        content = content[:toc_end_pos] + toc_entry + content[toc_end_pos:]
+    return content
+
+
 # 更新 Markdown 内容
 def update_markdown(new_links_by_category, translator):
     if os.path.exists("README.md"):
         with open("README.md", "r", encoding="utf-8") as f:
             content = f.read()
     else:
-        content = "# arXiv 论文摘要\n\n"
-
-    # 仅在初次添加时插入目录
-    if not toc_exists(content):
-        toc = "## 目录\n\n"
-        for category in new_links_by_category.keys():
-            toc += f"- [{category}](#{category.lower()})\n"
-        content = toc + "\n" + content  # 目录添加到文档开头
+        content = "# arXiv 论文摘要\n\n## 目录\n\n"
 
     # 遍历每个类别的新链接
     for category, links in new_links_by_category.items():
+        # 更新目录
+        content = update_toc(content, category)
+
         # 获取类别最后一个编号
         last_index = get_last_index_for_category(content, category)
         current_index = last_index
