@@ -270,7 +270,14 @@ def update_markdown(new_links_by_category, translator):
         with open("README.md", "r", encoding="utf-8") as f:
             content = f.read()
     else:
-        content = "# arXiv 论文摘要\n\n## 目录\n\n"
+        content = "# arXiv 论文摘要\n\n"
+
+    # 仅在初次添加时插入目录
+    if not toc_exists(content):
+        toc = "## 目录\n\n"
+        for category in new_links_by_category.keys():
+            toc += f"- [{category}](#{category.lower()})\n"
+        content = toc + "\n" + content  # 目录添加到文档开头
 
     # 遍历每个类别的新链接
     for category, links in new_links_by_category.items():
