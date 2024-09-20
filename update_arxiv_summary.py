@@ -164,7 +164,7 @@ def download_and_extract_key_images(arxiv_id):
 
                 # Check if the text contains "architecture" or "pipeline"
                 if re.search(
-                    r"architectures|architecture|pipeline|pipelines",
+                    r"architectures|architecture|pipeline|pipelines|framework|structure",
                     text_around,
                     re.IGNORECASE,
                 ):
