@@ -220,7 +220,7 @@ def translate_to_chinese(text, translator):
         finally:
             if retry_count == NUM_RETRIES:
                 print("Could not recover after making " f"{retry_count} attempts.")
-                print(f"translatation failed. paper_abstract:\n {paper_abstract} ")
+                print("translatation failed.")
     return translator.translate(text, dest="zh-cn").text
 
 
