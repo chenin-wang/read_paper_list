@@ -224,6 +224,15 @@ def translate_to_chinese(text, translator):
     return translator.translate(text, dest="zh-cn").text
 
 
+# 获取类别在文档中的插入位置
+def get_category_insert_position(content, category):
+    pattern = re.compile(rf"### {re.escape(category)}\n")
+    match = pattern.search(content)
+    if match:
+        return match.end()  # 返回类别标题之后的插入点
+    return None  # 如果类别不存在，返回None
+
+
 # 提取现有类别下的最大编号
 def get_last_index_for_category(content, category):
     pattern = re.compile(rf"### {re.escape(category)}\n\n(?:#### (\d+))")
@@ -233,30 +242,53 @@ def get_last_index_for_category(content, category):
     return 0  # 如果没有找到，返回0
 
 
+# 检查目录是否已存在
+def toc_exists(content):
+    return "## 目录" in content
+
+
+# 检查类别是否已存在于目录中
+def category_exists_in_toc(content, category):
+    toc_pattern = re.compile(
+        rf"- \[{re.escape(category)}\]\(#{re.escape(category.lower())}\)"
+    )
+    return bool(toc_pattern.search(content))
+
+
+# 更新 Markdown 内容
 def update_markdown(new_links_by_category, translator):
-    # 如果 README 文件存在，则读取内容，否则初始化
     if os.path.exists("README.md"):
         with open("README.md", "r", encoding="utf-8") as f:
             content = f.read()
     else:
         content = "# arXiv 论文摘要\n\n"
 
-    # 初始化目录和新内容
-    toc = "## 目录\n\n"
-    new_content = ""
+    # 仅在初次添加时插入目录
+    if not toc_exists(content):
+        toc = "## 目录\n\n"
+        for category in new_links_by_category.keys():
+            toc += f"- [{category}](#{category.lower()})\n"
+        content = toc + "\n" + content  # 目录添加到文档开头
 
+    # 遍历每个类别的新链接
     for category, links in new_links_by_category.items():
-        # 获取当前类别的最后一个编号
+        # 获取类别最后一个编号
         last_index = get_last_index_for_category(content, category)
         current_index = last_index
 
-        # 如果该类别不存在，则新增一个标题
-        if f"### {category}" not in content:
-            new_content += f"### {category}\n\n"
-            toc += f"- [{category}](#{category.lower()})\n"  # 在目录中添加类别链接
+        # 获取类别的插入位置
+        insert_position = get_category_insert_position(content, category)
 
+        # 如果类别不存在，添加到末尾，并插入类别标题
+        if insert_position is None:
+            new_content = f"\n### {category}\n\n"
+            insert_position = len(content)  # 在文档末尾插入新类别
+        else:
+            new_content = ""
+
+        # 处理每个链接
         for link in links:
-            current_index += 1  # 当前类别下的编号递增
+            current_index += 1  # 递增编号
             arxiv_id = link.split("/")[-1]
             summary, title, publish_time = get_arxiv_summary(arxiv_id)
             logging.info(
@@ -303,24 +335,19 @@ def update_markdown(new_links_by_category, translator):
                 logging.warning(f"Skipping {link} due to translation failure.")
                 continue
 
-            # 添加每个链接为有编号的子标题，并在目录中更新链接
+            # 新增内容
             new_content += (
                 f"#### {current_index}. [{title}]({link}) 发表时间: {publish_time}\n\n"
             )
-            toc += f"  - [{current_index}. {title}](#{category.lower()}-{current_index})\n"  # 目录中的链接
-
             if key_images:
                 for img_filename in key_images:
                     new_content += f"![Key Image]({img_filename})\n\n"
-            else:
-                logging.warning(f"No images found for {arxiv_id}")
-
             new_content += f"{translated_summary}\n\n---\n\n"
 
-    # 更新目录
-    content = toc + "\n" + new_content + content
+        # 在指定位置插入新内容
+        content = content[:insert_position] + new_content + content[insert_position:]
 
-    # 写入 README 文件
+    # 写回文件
     with open("README.md", "w", encoding="utf-8") as f:
         f.write(content)
 
