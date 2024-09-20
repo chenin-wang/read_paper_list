@@ -224,72 +224,137 @@ def translate_to_chinese(text, translator):
     return translator.translate(text, dest="zh-cn").text
 
 
-def update_markdown(new_links, translator):
+# 提取现有类别下的最大编号
+def get_last_index_for_category(content, category):
+    pattern = re.compile(rf"### {re.escape(category)}\n\n(?:#### (\d+))")
+    matches = pattern.findall(content)
+    if matches:
+        return int(matches[-1])  # 返回该类别的最大编号
+    return 0  # 如果没有找到，返回0
+
+
+def update_markdown(new_links_by_category, translator):
+    # 如果 README 文件存在，则读取内容，否则初始化
     if os.path.exists("README.md"):
         with open("README.md", "r", encoding="utf-8") as f:
             content = f.read()
     else:
         content = "# arXiv 论文摘要\n\n"
 
+    # 初始化目录和新内容
+    toc = "## 目录\n\n"
     new_content = ""
-    for link in new_links:
-        arxiv_id = link.split("/")[-1]
-        summary, title, publish_time = get_arxiv_summary(arxiv_id)
-        logging.info(
-            f"summary: {summary}, title: {title}, publish_time: {publish_time}"
-        )
-        # Create queues for translation and image download results
-        translation_queue = queue.Queue()
-        image_queue = queue.Queue()
 
-        # Define thread functions
-        def translation_thread():
-            translated_summary = translate_to_chinese(summary, translator)
-            translation_queue.put((arxiv_id, translated_summary))
-            logging.info(f"Translation finished for {arxiv_id}")
+    for category, links in new_links_by_category.items():
+        # 获取当前类别的最后一个编号
+        last_index = get_last_index_for_category(content, category)
+        current_index = last_index
 
-        def image_download_thread():
-            key_images = download_and_extract_key_images(arxiv_id)
-            image_queue.put((arxiv_id, key_images))
-            logging.info(f"Image download finished for {arxiv_id}")
+        # 如果该类别不存在，则新增一个标题
+        if f"### {category}" not in content:
+            new_content += f"### {category}\n\n"
+            toc += f"- [{category}](#{category.lower()})\n"  # 在目录中添加类别链接
 
-        # Start threads
-        t1 = threading.Thread(target=translation_thread)
-        t2 = threading.Thread(target=image_download_thread)
-        t1.start()
-        t2.start()
+        for link in links:
+            current_index += 1  # 当前类别下的编号递增
+            arxiv_id = link.split("/")[-1]
+            summary, title, publish_time = get_arxiv_summary(arxiv_id)
+            logging.info(
+                f"summary: {summary}, title: {title}, publish_time: {publish_time}"
+            )
 
-        # Wait for both threads to finish
-        t1.join()
-        t2.join()
+            # 创建翻译和图片下载的队列
+            translation_queue = queue.Queue()
+            image_queue = queue.Queue()
 
-        # Get results from queues
-        trans_arxiv_id, translated_summary = translation_queue.get()
-        img_arxiv_id, key_images = image_queue.get()
+            # 定义线程函数
+            def translation_thread():
+                translated_summary = translate_to_chinese(summary, translator)
+                translation_queue.put((arxiv_id, translated_summary))
+                logging.info(f"Translation finished for {arxiv_id}")
 
-        # Ensure the results are for the same arxiv_id
-        if trans_arxiv_id != img_arxiv_id or trans_arxiv_id != arxiv_id:
-            logging.error(f"Mismatch in arxiv_id for {arxiv_id}. Skipping this paper.")
-            continue
+            def image_download_thread():
+                key_images = download_and_extract_key_images(arxiv_id)
+                image_queue.put((arxiv_id, key_images))
+                logging.info(f"Image download finished for {arxiv_id}")
 
-        if translated_summary is None:
-            logging.warning(f"Skipping {link} due to translation failure.")
-            continue
+            # 启动线程
+            t1 = threading.Thread(target=translation_thread)
+            t2 = threading.Thread(target=image_download_thread)
+            t1.start()
+            t2.start()
 
-        new_content += f"## [{title}]({link}) 发表时间: {publish_time}\n\n"
-        if key_images:
-            for img_filename in key_images:
-                new_content += f"![Key Image]({img_filename})\n\n"
-        else:
-            logging.warning(f"No images found for {arxiv_id}")
-        new_content += f"{translated_summary}\n\n---\n\n"
+            # 等待线程结束
+            t1.join()
+            t2.join()
 
-    if new_content:
-        content = new_content + content
-        with open("README.md", "w", encoding="utf-8") as f:
-            f.write(content)
-    else:
-        logging.info("No new content to update in README.md")
+            # 从队列中获取结果
+            trans_arxiv_id, translated_summary = translation_queue.get()
+            img_arxiv_id, key_images = image_queue.get()
+
+            # 确保结果是同一个 arxiv_id
+            if trans_arxiv_id != img_arxiv_id or trans_arxiv_id != arxiv_id:
+                logging.error(
+                    f"Mismatch in arxiv_id for {arxiv_id}. Skipping this paper."
+                )
+                continue
+
+            if translated_summary is None:
+                logging.warning(f"Skipping {link} due to translation failure.")
+                continue
+
+            # 添加每个链接为有编号的子标题，并在目录中更新链接
+            new_content += (
+                f"#### {current_index}. [{title}]({link}) 发表时间: {publish_time}\n\n"
+            )
+            toc += f"  - [{current_index}. {title}](#{category.lower()}-{current_index})\n"  # 目录中的链接
+
+            if key_images:
+                for img_filename in key_images:
+                    new_content += f"![Key Image]({img_filename})\n\n"
+            else:
+                logging.warning(f"No images found for {arxiv_id}")
+
+            new_content += f"{translated_summary}\n\n---\n\n"
+
+    # 更新目录
+    content = toc + "\n" + new_content + content
+
+    # 写入 README 文件
+    with open("README.md", "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+def update_links_with_new_entries(links):
+    previous_links = {}
+    if os.path.exists("previous_links.json"):
+        try:
+            with open("previous_links.json", "r") as f:
+                content = f.read().strip()
+                if content:
+                    previous_links = json.loads(content)
+                else:
+                    previous_links = {}
+        except json.JSONDecodeError as e:
+            logging.error(f"Error decoding previous_links.json: {str(e)}")
+            previous_links = {}
+
+    # 整理出每个类别的新链接
+    new_links_by_category = {}
+    for category, link_list in links.items():
+        new_links_by_category[category] = [
+            link for link in link_list if link not in previous_links.get(category, [])
+        ]
+
+    # 按类别更新 markdown
+    for category, links in new_links_by_category.items():
+        if links:
+            update_markdown({category: links}, translator)
+            previous_links[category] = previous_links.get(category, []) + links
+
+    # 更新 previous_links.json 文件
+    with open("previous_links.json", "w") as f:
+        json.dump(previous_links, f)
 
 
 if __name__ == "__main__":
@@ -298,7 +363,7 @@ if __name__ == "__main__":
         "--google_api_key", type=str, required=True, help="Google AI API key."
     )
     args = parser.parse_args()
-
+    os.makedirs("images", exist_ok=True)
     translator = Translater(api_key=args.google_api_key)
 
     try:
@@ -306,28 +371,8 @@ if __name__ == "__main__":
             links = json.load(f)
     except json.JSONDecodeError as e:
         logging.error(f"Error decoding arxiv_links.json: {str(e)}")
-        links = []
+        links = {}
 
-    os.makedirs("images", exist_ok=True)
-
-    previous_links = []
-    if os.path.exists("previous_links.json"):
-        try:
-            with open("previous_links.json", "r") as f:
-                content = f.read().strip()
-                if content:
-                    previous_links = json.loads(content)
-                else:
-                    previous_links = []
-        except json.JSONDecodeError as e:
-            logging.error(f"Error decoding previous_links.json: {str(e)}")
-            previous_links = []
-
-    new_links = [link for link in links if link not in previous_links]
-
-    update_markdown(new_links, translator)
-
-    with open("previous_links.json", "w") as f:
-        json.dump(links, f)
+    update_links_with_new_entries(links)
 
     logging.info("Update completed successfully.")
