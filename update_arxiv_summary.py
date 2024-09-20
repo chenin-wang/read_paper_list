@@ -85,13 +85,6 @@ def get_arxiv_summary(arxiv_id):
         return None, None, None
 
 
-import os
-import re
-import requests
-import fitz  # PyMuPDF
-import logging
-
-
 def recoverpix(doc, item):
     xref, smask = item[0], item[1]  # xref of PDF image and its /SMask
 
@@ -221,7 +214,7 @@ def translate_to_chinese(text, translator):
             if retry_count == NUM_RETRIES:
                 print("Could not recover after making " f"{retry_count} attempts.")
                 print("translatation failed.")
-    return translator.translate(text, dest="zh-cn").text
+    return translator.translate(text).text
 
 
 # 获取类别在文档中的插入位置
