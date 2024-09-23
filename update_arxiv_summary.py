@@ -239,19 +239,25 @@ def toc_exists(content):
     return "## 目录" in content
 
 
+# 将标题转为适合链接的格式（小写、空格替换为-、去除特殊字符）
+def generate_anchor(category):
+    # 特殊字符处理：将 & 替换为 %26
+    category = category.replace("&", "%26")
+    # 去除其他特殊字符，仅保留字母、数字、空格和下划线
+    return re.sub(r"[^\w\s-]", "", category).replace(" ", "-").lower()
+
+
 # 检查类别是否已存在于目录中
 def category_exists_in_toc(content, category):
-    toc_pattern = re.compile(
-        rf"- \[{re.escape(category)}\]\(#{re.escape(category.lower())}\)"
-    )
-    return bool(toc_pattern.search(content))
+    anchor = generate_anchor(category)
+    return f"- [{category}](#{anchor})" in content
 
 
-# 更新目录
+# 更新目录，若类别不存在则添加到目录中
 def update_toc(content, category):
     if not category_exists_in_toc(content, category):
         toc_end_pos = content.find("\n\n", content.find("## 目录"))
-        toc_entry = f"- [{category}](#{category.lower()})\n"
+        toc_entry = f"- [{category}](#{generate_anchor(category)})\n"
         content = content[:toc_end_pos] + toc_entry + content[toc_end_pos:]
     return content
 
@@ -267,14 +273,16 @@ def update_markdown(new_links_by_category, translator):
     # 仅在初次添加时插入目录
     if not toc_exists(content):
         toc = "## 目录\n\n"
-        for category in new_links_by_category.keys():
-            toc += f"- [{category}](#{category.lower()})\n"
+        toc += "".join(
+            f"- [{category}](#{generate_anchor(category)})\n"
+            for category in new_links_by_category
+        )
         content = toc + "\n" + content  # 目录添加到文档开头
 
     # 遍历每个类别的新链接
     for category, links in new_links_by_category.items():
         # 更新目录
-        content = update_toc(content, category)
+        content = update_toc(content, category)  # 更新目录
 
         # 获取类别最后一个编号
         last_index = get_last_index_for_category(content, category)
