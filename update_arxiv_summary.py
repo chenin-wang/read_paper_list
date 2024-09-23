@@ -236,28 +236,35 @@ def get_last_index_for_category(content, category):
 
 # 检查目录是否已存在
 def toc_exists(content):
-    return "## 目录" in content
+    return "<details>\n  <summary>Table of Contents</summary>" in content
 
 
-# 将标题转为适合链接的格式（小写、空格替换为-、去除特殊字符）
+# 将标题转为适合 GitHub Markdown 锚点格式的链接（小写、空格替换为-、去除特殊字符）
 def generate_anchor(category):
-    # 特殊字符处理：将 & 替换为 %26
-    category = category.replace("&", "%26")
-    # 去除其他特殊字符，仅保留字母、数字、空格和下划线
-    return re.sub(r"[^\w\s-]", "", category).replace(" ", "-").lower()
+    category = category.strip()  # 去除首尾空白
+    category = category.replace("&", "and")  # 替换特殊字符
+    category = re.sub(
+        r"[^\w\s-]", "", category
+    )  # 移除除字母、数字、连字符和空格外的字符
+    return category.replace(" ", "-").lower()
 
 
 # 检查类别是否已存在于目录中
 def category_exists_in_toc(content, category):
     anchor = generate_anchor(category)
-    return f"- [{category}](#{anchor})" in content
+    toc_entry = f"<a href=#{anchor}>{category}</a>"
+    return toc_entry in content
 
 
 # 更新目录，若类别不存在则添加到目录中
 def update_toc(content, category):
     if not category_exists_in_toc(content, category):
-        toc_end_pos = content.find("\n\n", content.find("## 目录"))
-        toc_entry = f"- [{category}](#{generate_anchor(category)})\n"
+        toc_end_pos = content.find("</ol>", content.find("<details>"))
+        if toc_end_pos == -1:
+            toc_end_pos = content.find("</details>")  # 处理目录无序列表结束的情况
+        toc_entry = (
+            f"    <li><a href=#{generate_anchor(category)}>{category}</a></li>\n"
+        )
         content = content[:toc_end_pos] + toc_entry + content[toc_end_pos:]
     return content
 
@@ -272,12 +279,16 @@ def update_markdown(new_links_by_category, translator):
 
     # 仅在初次添加时插入目录
     if not toc_exists(content):
-        toc = "## 目录\n\n"
+        toc = """<details>
+            <summary>Table of Contents</summary>
+            <ol>
+            """
         toc += "".join(
-            f"- [{category}](#{generate_anchor(category)})\n"
+            f"    <li><a href=#{generate_anchor(category)}>{category}</a></li>\n"
             for category in new_links_by_category
-        )
-        content = toc + "\n" + content  # 目录添加到文档开头
+        )  # 使用缩进
+        toc += "  </ol>\n</details>\n\n"  # 目录添加到文档开头，并关闭 <details> 标签
+        content = toc + content  # 目录插入到文档开头
 
     # 遍历每个类别的新链接
     for category, links in new_links_by_category.items():
