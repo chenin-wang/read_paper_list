@@ -214,7 +214,6 @@ def translate_to_chinese(text, translator):
             if retry_count == NUM_RETRIES:
                 print("Could not recover after making " f"{retry_count} attempts.")
                 print("translatation failed.")
-    return translator.translate(text).text
 
 
 # 获取类别在文档中的插入位置
