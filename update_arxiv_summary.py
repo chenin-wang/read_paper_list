@@ -259,9 +259,8 @@ def category_exists_in_toc(content, category):
 # 更新目录，若类别不存在则添加到目录中
 def update_toc(content, category):
     if not category_exists_in_toc(content, category):
-        toc_end_pos = content.find("</ol>", content.find("<details>"))
-        if toc_end_pos == -1:
-            toc_end_pos = content.find("</details>")  # 处理目录无序列表结束的情况
+        toc_start_pos = content.find("<ol>", content.find("<details>"))
+        toc_end_pos = content.find("</ol>", toc_start_pos)
         toc_entry = (
             f"    <li><a href=#{generate_anchor(category)}>{category}</a></li>\n"
         )
