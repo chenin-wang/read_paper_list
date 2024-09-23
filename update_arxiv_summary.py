@@ -236,7 +236,7 @@ def get_last_index_for_category(content, category):
 
 # 检查目录是否已存在
 def toc_exists(content):
-    return "<details>\n  <summary>Table of Contents</summary>" in content
+    return "<summary>Table of Contents</summary>" in content
 
 
 # 将标题转为适合 GitHub Markdown 锚点格式的链接（小写、空格替换为-、去除特殊字符）
@@ -270,24 +270,25 @@ def update_toc(content, category):
 
 # 更新 Markdown 内容
 def update_markdown(new_links_by_category, translator):
-    if os.path.exists("README.md"):
-        with open("README.md", "r", encoding="utf-8") as f:
+    """更新 Markdown 内容"""
+    filename = "README.md"
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
             content = f.read()
     else:
         content = "# arXiv 论文摘要\n\n"
 
-    # 仅在初次添加时插入目录
+    # 创建目录，并只创建一次
+    toc_start = "<details>\n<summary>Table of Contents</summary>\n<ol>\n"
+    toc_end = "</ol>\n</details>\n\n"
     if not toc_exists(content):
-        toc = """<details>
-            <summary>Table of Contents</summary>
-            <ol>
-            """
-        toc += "".join(
-            f"    <li><a href=#{generate_anchor(category)}>{category}</a></li>\n"
-            for category in new_links_by_category
-        )  # 使用缩进
-        toc += "  </ol>\n</details>\n\n"  # 目录添加到文档开头，并关闭 <details> 标签
-        content = toc + content  # 目录插入到文档开头
+        toc_items = []
+        for category in new_links_by_category:
+            toc_items.append(
+                f"    <li><a href=#{generate_anchor(category)}>{category}</a></li>"
+            )
+        toc = toc_start + "\n".join(toc_items) + toc_end
+        content = toc + content
 
     # 遍历每个类别的新链接
     for category, links in new_links_by_category.items():
