@@ -6,7 +6,9 @@
     "https://arxiv.org/pdf/2407.17453"
   ],
   "VFM":[
-    "https://arxiv.org/abs/2312.06709"],
+    "https://arxiv.org/abs/2312.06709",
+    "https://arxiv.org/pdf/2409.13513"
+  ],
   "diffusion": [
     "https://arxiv.org/abs/2409.11355",
     "https://arxiv.org/abs/2409.10695",
@@ -26,6 +28,7 @@
     "https://arxiv.org/abs/2409.10594"
   ],
   "stereo":[
-    "https://arxiv.org/abs/2409.09479v1"
+    "https://arxiv.org/abs/2409.09479v1",
+    "https://arxiv.org/abs/2410.02073"
   ]
 }
