@@ -33,6 +33,13 @@
 
 
 ### VFM
+#### 1. [Efficient and Discriminative Image Feature Extraction for Universal Image Retrieval](https://arxiv.org/pdf/2409.13513) 发表时间: 2024-09-20
+
+当前的图像检索系统经常面临领域特异性和泛化性问题。本研究旨在通过开发一种计算高效的通用特征提取器训练框架来克服这些限制，该框架可以提供跨多个领域的强大语义图像表示。为此，我们整理了一个名为 M4D-35k 的多领域训练数据集，该数据集支持资源高效的训练。此外，我们对各种最先进的视觉语义基础模型和基于边际的度量学习损失函数进行了广泛的评估和比较，以确定它们对高效通用特征提取的适用性。尽管计算资源有限，但我们在 Google 通用图像嵌入挑战赛上取得了接近最先进水平的结果，mMP@5 为 0.721。这使我们的方法在排行榜上位居第二，仅落后于性能最佳的方法 0.7 个百分点。然而，我们的模型的总体参数减少了 32%，可训练参数减少了 289 倍。与计算需求相似的方法相比，我们的性能比之前的最先进水平高出 3.3 个百分点。我们在 https://github.com/morrisfl/UniFEx 上发布了我们的代码和 M4D-35k 训练集注释。 
+
+
+---
+
 
 #### 1. [AM-RADIO: Agglomerative Vision Foundation Model -- Reduce All Domains Into One](https://arxiv.org/abs/2312.06709) 发表时间: 2023-12-10
 
@@ -152,6 +159,13 @@ Transformer 是现代深度学习的基石。传统上，这些模型依靠多�
 
 
 ### stereo
+#### 1. [Depth Pro: Sharp Monocular Metric Depth in Less Than a Second](https://arxiv.org/abs/2410.02073) 发表时间: 2024-10-02
+
+我们提出了一个用于零样本度量单目深度估计的基础模型。我们的模型 Depth Pro 可以合成具有无与伦比的清晰度和高频细节的高分辨率深度图。预测结果是度量的，具有绝对尺度，不依赖于相机内参等元数据的可用性。而且该模型速度很快，在标准 GPU 上只需 0.3 秒即可生成 225 万像素的深度图。这些特性得益于多项技术贡献，包括用于密集预测的高效多尺度视觉Transformer、结合真实和合成数据集以实现高精度度量和精细边界追踪的训练协议、用于评估估计深度图边界精度的专用指标，以及从单张图像进行焦距估计的最新技术。大量实验分析了具体的设计选择，并证明 Depth Pro 在多个方面优于先前的工作。我们在https://github.com/apple/ml-depth-pro 上发布了代码和权重。 
+
+
+---
+
 
 #### 1. [MAC-VO: Metrics-aware Covariance for Learning-based Stereo Visual Odometry](https://arxiv.org/abs/2409.09479v1) 发表时间: 2024-09-14
 
